@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokeravond Rekentool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h2>Pokeravond Rekentool</h2>
+
+  <div class="no-print">
+    <button onclick="voegSpelerToe()">+ Speler toevoegen (max 9)</button>
+    <button onclick="resetData()">Reset gegevens</button>
+    <button onclick="window.print()">Print overzicht</button>
+  </div>
+
+  <table id="pokertable">
+    <thead>
+      <tr>
+        <th>Speler</th>
+        <th>Inkopen (€10)</th>
+        <th>Ingelegd</th>
+        <th>Eindwaarde</th>
+        <th>Winst/Verlies</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+
+  <div class="summary">
+    <p id="totaal-ingelegd">Totaal ingelegd: €0</p>
+    <p id="totaal-eindwaarde">Totaal eindwaarde: €0</p>
+    <p id="verschil">Verschil (moet €0 zijn): €0</p>
+  </div>
+
+  <script>
+    let spelersAantal = 0;
+    const MAX_SPELERS = 9;
+
+    function createSpelerRow(data = {}) {
+      if (spelersAantal >= MAX_SPELERS) return;
+
+      const tbody = document.getElementById('table-body');
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td><input type="text" value="${data.naam || 'Speler ' + (spelersAantal + 1)}" class="naam" oninput="saveData()"></td>
+        <td>
+          <div class="controls">
+            <button onclick="pasInkoopAan(this, -1)">–</button>
+            <span class="inkopen">${data.inkopen || 0}</span>
+            <button onclick="pasInkoopAan(this, 1)">+</button>
+          </div>
+        </td>
+        <td class="ingelegd">€0</td>
+        <td><input type="number" min="0" value="${data.eindwaarde || 0}" class="eindwaarde" oninput="bereken()"></td>
+        <td class="resultaat">€0</td>
+      `;
+
+      tbody.appendChild(row);
+      spelersAantal++;
+    }
+
+    function pasInkoopAan(btn, delta) {
+      const span = btn.parentElement.querySelector('.inkopen');
+      let huidige = parseInt(span.textContent) || 0;
+      huidige = Math.max(0, huidige + delta);
+      span.textContent = huidige;
+      bereken();
+    }
+
+    function bereken() {
+      const rows = document.querySelectorAll('#pokertable tbody tr');
+      let totaalIngelegd = 0;
+      let totaalEindwaarde = 0;
+
+      const dataToSave = [];
+
+      rows.forEach(row => {
+        const naam = row.querySelector('.naam').value;
+        const inkopen = parseInt(row.querySelector('.inkopen').textContent) || 0;
+        const ingelegd = inkopen * 10;
+        const eindwaarde = parseFloat(row.querySelector('.eindwaarde').value) || 0;
+        const resultaat = eindwaarde - ingelegd;
+
+        row.querySelector('.ingelegd').textContent = `€${ingelegd}`;
+        const resultaatCell = row.querySelector('.resultaat');
+        resultaatCell.textContent = (resultaat >= 0 ? '+' : '') + `€${resultaat}`;
+        resultaatCell.className = 'resultaat ' + (resultaat >= 0 ? 'winst' : 'verlies');
+
+        totaalIngelegd += ingelegd;
+        totaalEindwaarde += eindwaarde;
+
+        dataToSave.push({
+          naam,
+          inkopen,
+          eindwaarde
+        });
+      });
+
+      document.getElementById('totaal-ingelegd').textContent = `Totaal ingelegd: €${totaalIngelegd}`;
+      document.getElementById('totaal-eindwaarde').textContent = `Totaal eindwaarde: €${totaalEindwaarde}`;
+      const verschil = totaalEindwaarde - totaalIngelegd;
+      document.getElementById('verschil').textContent = `Verschil (moet €0 zijn): €${verschil}`;
+
+      localStorage.setItem('pokeravond_data', JSON.stringify(dataToSave));
+    }
+
+    function resetData() {
+      if (confirm("Weet je zeker dat je alles wilt wissen?")) {
+        localStorage.removeItem('pokeravond_data');
+        document.getElementById('table-body').innerHTML = '';
+        spelersAantal = 0;
+        for (let i = 0; i < 4; i++) voegSpelerToe();
+        bereken();
+      }
+    }
+
+    function loadData() {
+      const saved = JSON.parse(localStorage.getItem('pokeravond_data')) || [];
+      document.getElementById('table-body').innerHTML = '';
+      spelersAantal = 0;
+      saved.forEach(speler => createSpelerRow(speler));
+      if (saved.length === 0) {
+        for (let i = 0; i < 4; i++) voegSpelerToe();
+      }
+      bereken();
+    }
+
+    function voegSpelerToe() {
+      createSpelerRow();
+      bereken();
+    }
+
+    function saveData() {
+      bereken(); // automatisch opslaan
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>
