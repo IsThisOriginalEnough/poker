@@ -24,6 +24,7 @@
         <th>Ingelegd</th>
         <th>Eindwaarde</th>
         <th>Winst/Verlies</th>
+        <th>Verwijder</th>
       </tr>
     </thead>
     <tbody id="table-body"></tbody>
@@ -70,6 +71,31 @@
       span.textContent = huidige;
       bereken();
     }
+
+    function createSpelerRow(data = {}) {
+    if (spelersAantal >= MAX_SPELERS) return;
+
+    const tbody = document.getElementById('table-body');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+      <td><input type="text" value="${data.naam || 'Speler ' + (spelersAantal + 1)}" class="naam" oninput="saveData()"></td>
+      <td>
+        <div class="controls">
+          <button onclick="pasInkoopAan(this, -1)">–</button>
+          <span class="inkopen">${data.inkopen || 0}</span>
+          <button onclick="pasInkoopAan(this, 1)">+</button>
+        </div>
+      </td>
+      <td class="ingelegd">€0</td>
+      <td><input type="number" min="0" value="${data.eindwaarde || 0}" class="eindwaarde" oninput="bereken()"></td>
+      <td class="resultaat">€0</td>
+      <td><button class="removebtn" onclick="verwijderSpeler(this)">Verwijder</button></td>
+    `;
+
+    tbody.appendChild(row);
+    spelersAantal++;
+}
 
     function bereken() {
       const rows = document.querySelectorAll('#pokertable tbody tr');
@@ -137,6 +163,114 @@
     function saveData() {
       bereken(); // automatisch opslaan
     }
+
+function voegSpelerToe () {
+    createSpelerRow();
+    bereken();
+}
+
+function verwijderSpeler(button) {
+    if (confirm("Weet je zeker dat je deze speler wilt verwijderen?")) {
+      const row = button.closest('tr');
+      row.remove();
+      spelersAantal--;
+      bereken();
+    }
+}
+
+function pasInkoopAan(btn, delta) {
+    const span = btn.parentElement.querySelector('.inkopen');
+    let huidige = parseInt(span.textContent) || 0;
+    huidige = Math.max(0, huidige + delta);
+    span.textContent = huidige;
+    bereken();
+  }
+
+function bereken() {
+    const rows = document.querySelectorAll('#pokertable tbody tr');
+    let totaalIngelegd = 0;
+    let totaalEindwaarde = 0;
+
+    const dataToSave = [];
+
+    rows.forEach(row => {
+      const naam = row.querySelector('.naam').value;
+      const inkopen = parseInt(row.querySelector('.inkopen').textContent) || 0;
+      const ingelegd = inkopen * 10;
+      const eindwaarde = parseFloat(row.querySelector('.eindwaarde').value) || 0;
+      const resultaat = eindwaarde - ingelegd;
+
+      row.querySelector('.ingelegd').textContent = `€${ingelegd}`;
+      const resultaatCell = row.querySelector('.resultaat');
+      resultaatCell.textContent = (resultaat >= 0 ? '+' : '') + `€${resultaat}`;
+      resultaatCell.className = 'resultaat ' + (resultaat >= 0 ? 'winst' : 'verlies');
+
+      totaalIngelegd += ingelegd;
+      totaalEindwaarde += eindwaarde;
+
+      dataToSave.push({
+        naam,
+        inkopen,
+        eindwaarde
+      });
+    });
+
+    document.getElementById('totaal-ingelegd').textContent = `Totaal ingelegd: €${totaalIngelegd}`;
+    document.getElementById('totaal-eindwaarde').textContent = `Totaal eindwaarde: €${totaalEindwaarde}`;
+    const verschil = totaalEindwaarde - totaalIngelegd;
+    document.getElementById('verschil').textContent = `Verschil (moet €0 zijn): €${verschil}`;
+
+    localStorage.setItem('pokeravond_data', JSON.stringify(dataToSave));
+  }
+
+  function downloadJSON() {
+    const rows = document.querySelectorAll('#pokertable tbody tr');
+    const dataToDownload = [];
+    const sessionTimestamp = new Date().toISOString(); // ISO format timestamp
+    const sessionDate = new Date().toLocaleDateString(); // Human-readable date
+    const hostName = document.getElementById('host-name').value || "Onbekend"; // Default to "Unknown"
+  
+    // Add session details to the top of the data
+    const sessionDetails = {
+      sessionDate,
+      hostName,
+      sessionTimestamp // Timestamp of the session export
+    };
+  
+    rows.forEach(row => {
+      const naam = row.querySelector('.naam').value;
+      const inkopen = parseInt(row.querySelector('.inkopen').textContent) || 0;
+      const eindwaarde = parseFloat(row.querySelector('.eindwaarde').value) || 0;
+      const ingelegd = inkopen * 10;
+      const resultaat = eindwaarde - ingelegd;
+  
+      dataToDownload.push({
+        naam,
+        inkopen,
+        ingelegd,
+        eindwaarde,
+        resultaat,
+        timestamp: new Date().toISOString() // Timestamp for when the player was added/updated
+      });
+    });
+  
+    // Combine session details and players' data
+    const fullData = {
+      session: sessionDetails,
+      players: dataToDownload
+    };
+  
+    const json = JSON.stringify(fullData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+  
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pokeravond_${sessionDate}.json`;
+    a.click();
+  
+    URL.revokeObjectURL(url);
+}
 
     loadData();
   </script>
