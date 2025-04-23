@@ -126,6 +126,9 @@ body {
     .resultaat {
       font-weight: bold;
     }
+    th:nth-child(6), td:nth-child(6) {
+      display: none;
+    }
   }
 
   /* Mobielvriendelijk */

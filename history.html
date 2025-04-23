@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokeravond Geschiedenis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js CDN -->
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Flex container for the entire page */
+    .container {
+      display: flex;
+      align-items: flex-start;
+    }
+
+    /* Left section for sessions list */
+    .sessions-list {
+      flex: 1; /* Take the remaining space */
+      max-height: 80vh; /* Limit the height */
+      overflow-y: auto; /* Make it scrollable */
+      padding-right: 20px;
+      margin-right: 20px;
+      border-right: 2px solid #ddd; /* Optional border between the two sections */
+    }
+
+    /* Right section for the chart */
+    .chart-container {
+      width: 400px;
+      position: -webkit-sticky;
+      position: sticky;
+      top: 20px; /* Stay at top while scrolling */
+      height: 80vh; /* Limit the height */
+      padding: 10px;
+      background: #f9f9f9;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Some styling for the chart container */
+    #profitChart {
+      width: 100%;
+      height: 100%;
+    }
+
+    .back-link {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Pokeravond Geschiedenis</h2>
+
+  <!-- Back to current session button -->
+  <div class="back-link">
+    <a href="pokernightv3.html">Terug naar de huidige sessie</a>
+  </div>
+
+  <!-- Flex container for the two parts: sessions list and chart -->
+  <div class="container">
+    <!-- Left part: Sessions list with a table -->
+    <div class="sessions-list">
+      <h3>Sessions History</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Host</th>
+            <th>Datum</th>
+            <th>Aantal Spelers</th>
+            <th>Totaal ingelegd</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="sessionsList">
+          <!-- Session list will be populated here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right part: Chart -->
+    <div class="chart-container">
+      <canvas id="profitChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Load the session history from localStorage
+    const sessionHistory = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+  
+    // Initialize data for the chart
+    const playerData = {};
+  
+    // Iterate over each session and aggregate the results by player name
+    sessionHistory.forEach(session => {
+      session.players.forEach(player => {
+        if (!playerData[player.naam]) {
+          playerData[player.naam] = 0;  // Initialize with 0 if player name not present
+        }
+        playerData[player.naam] += player.resultaat; // Sum up results for same player name
+      });
+    });
+  
+    // Extract player names and aggregated profits
+    const playerNames = Object.keys(playerData);
+    const aggregatedProfits = playerNames.map(name => playerData[name]);
+  
+    // Create the chart
+    const ctx = document.getElementById('profitChart').getContext('2d');
+    const profitChart = new Chart(ctx, {
+      type: 'bar', // Bar chart
+      data: {
+        labels: playerNames, // Player names as the labels
+        datasets: [{
+          label: 'Winst/Verlies per Speler',
+          data: aggregatedProfits, // Aggregated profits from each player
+          backgroundColor: aggregatedProfits.map(profit => profit >= 0 ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)'), // Green for win, red for loss
+          borderColor: aggregatedProfits.map(profit => profit >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Winst/Verlies (€)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Spelers'
+            }
+          }
+        }
+      }
+    });
+    // Display sessions in the list as a table
+    const sessionsList = document.getElementById('sessionsList');
+    sessionHistory.forEach((session, index) => {
+      const listItem = document.createElement('tr');
+      const totalProfit = session.players.reduce((acc, player) => acc + player.ingelegd, 0); // Calculate the total profit/loss for the session
+      const totalPlayers = session.players.length;
+      const sessionLink = `session-details.html?id=${index}`; // Link to the details page with session index
+
+      listItem.innerHTML = `
+        <td>${session.hostName}</td>
+        <td>${session.sessionDate}</td>
+        <td>${totalPlayers}</td>
+        <td>€${totalProfit.toFixed(2)}</td>
+        <td><a href="${sessionLink}">Bekijk details</a></td>
+      `;
+      sessionsList.appendChild(listItem);
+    });
+  </script>
+</body>
+</html>

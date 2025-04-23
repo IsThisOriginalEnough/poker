@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Session Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .winst {
+  color: green;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* Style for Loss */
+.verlies {
+  color: red;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+  </style>
+</head>
+<body>
+
+  <h2>Session Details</h2>
+
+  <div class="back-link">
+    <a href="history.html">Terug naar de geschiedenis</a>
+  </div>
+
+  <h3 id="session-title"></h3>
+
+  <table id="session-details-table">
+    <thead>
+      <tr>
+        <th>Speler</th>
+        <th>Ingelegd</th>
+        <th>Eindwaarde</th>
+        <th>Winst/Verlies</th>
+      </tr>
+    </thead>
+    <tbody id="session-details-body">
+      <!-- Session player details will be populated here -->
+    </tbody>
+  </table>
+
+  <script>
+    // Get the session ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('id');
+    const sessionHistory = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+    const session = sessionHistory[sessionId];
+
+      session.players.sort((a, b) => b.resultaat - a.resultaat); 
+
+    // Populate session details
+    document.getElementById('session-title').textContent = `Host: ${session.hostName} | Datum: ${session.sessionDate}`;
+
+    const sessionDetailsBody = document.getElementById('session-details-body');
+    session.players.forEach(player => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${player.naam}</td>
+        <td>€${(player.inkopen * 10).toFixed(2)}</td>
+        <td>€${player.eindwaarde.toFixed(2)}</td>
+<td class="${player.resultaat >= 0 ? 'winst' : 'verlies'}">
+        €${player.resultaat >= 0 ? '+' : ''}${player.resultaat}
+      </td>
+      `;
+      sessionDetailsBody.appendChild(row);
+    });
+  </script>
+
+</body>
+</html>
