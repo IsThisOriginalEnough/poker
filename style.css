@@ -42,6 +42,7 @@ body {
   .controls {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 5px;
   }
 
@@ -50,8 +51,50 @@ body {
     font-size: 18px;
   }
 
+  .removebtn {
+    background-color:red;
+  }
+
   .winst { color: green; }
   .verlies { color: red; }
+
+  .host-container {
+    margin: 20px auto;
+    max-width: 600px;
+    text-align: center;
+  }
+  
+  .host-fields {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .host-input, .date-input {
+    flex: 1 1 200px;
+    text-align: left;
+  }
+  
+  .host-input label,
+  .date-input label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1rem;
+  }
+  
+  .host-input input,
+  .date-input input {
+    padding: 8px 10px;
+    font-size: 16px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: #fff;
+  }
+  
 
   .summary {
     font-weight: bold;

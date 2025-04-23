@@ -11,9 +11,23 @@
   <h2>Pokeravond Rekentool</h2>
 
   <div class="no-print">
+    <div class="host-container no-print">
+      <div class="host-fields">
+        <div class="host-input">
+          <label for="host-name">Naam van de host:</label>
+          <input type="text" id="host-name" placeholder="Bijv. Jan Jansen" oninput="updateSessionInfo()"/>
+        </div>
+        <div class="date-input">
+          <label for="session-date">Datum van sessie:</label>
+          <input type="date" id="session-date" oninput="updateSessionInfo()"/>
+        </div>
+      </div>
+    </div>
+    <br />
     <button onclick="voegSpelerToe()">+ Speler toevoegen (max 9)</button>
     <button onclick="resetData()">Reset gegevens</button>
     <button onclick="window.print()">Print overzicht</button>
+    <button onclick="endSession()">Einde sessie (lokaal opslaan)</button>
   </div>
 
   <table id="pokertable">
@@ -24,6 +38,7 @@
         <th>Ingelegd</th>
         <th>Eindwaarde</th>
         <th>Winst/Verlies</th>
+        <th>Verwijder</th>
       </tr>
     </thead>
     <tbody id="table-body"></tbody>
@@ -57,10 +72,16 @@
         <td class="ingelegd">€0</td>
         <td><input type="number" min="0" value="${data.eindwaarde || 0}" class="eindwaarde" oninput="bereken()"></td>
         <td class="resultaat">€0</td>
+        <td><button class="removebtn" onclick="verwijderSpeler(this)">Verwijder</button></td>
       `;
 
       tbody.appendChild(row);
       spelersAantal++;
+    }
+
+    function voegSpelerToe() {
+      createSpelerRow();
+      bereken();
     }
 
     function pasInkoopAan(btn, delta) {
@@ -71,12 +92,20 @@
       bereken();
     }
 
+    function verwijderSpeler(button) {
+      if (confirm("Weet je zeker dat je deze speler wilt verwijderen?")) {
+        const row = button.closest('tr');
+        row.remove();
+        spelersAantal--;
+        bereken();
+      }
+    }
+
     function bereken() {
       const rows = document.querySelectorAll('#pokertable tbody tr');
       let totaalIngelegd = 0;
       let totaalEindwaarde = 0;
-
-      const dataToSave = [];
+      const players = [];
 
       rows.forEach(row => {
         const naam = row.querySelector('.naam').value;
@@ -93,19 +122,20 @@
         totaalIngelegd += ingelegd;
         totaalEindwaarde += eindwaarde;
 
-        dataToSave.push({
-          naam,
-          inkopen,
-          eindwaarde
-        });
+        players.push({ naam, inkopen, eindwaarde, ingelegd, resultaat, timestamp: new Date().toISOString() });
       });
 
       document.getElementById('totaal-ingelegd').textContent = `Totaal ingelegd: €${totaalIngelegd}`;
       document.getElementById('totaal-eindwaarde').textContent = `Totaal eindwaarde: €${totaalEindwaarde}`;
-      const verschil = totaalEindwaarde - totaalIngelegd;
-      document.getElementById('verschil').textContent = `Verschil (moet €0 zijn): €${verschil}`;
+      document.getElementById('verschil').textContent = `Verschil (moet €0 zijn): €${totaalEindwaarde - totaalIngelegd}`;
 
-      localStorage.setItem('pokeravond_data', JSON.stringify(dataToSave));
+      const session = {
+        hostName: document.getElementById('host-name').value,
+        sessionDate: document.getElementById('session-date').value,
+        players
+      };
+
+      localStorage.setItem('pokeravond_current', JSON.stringify(session));
     }
 
     function resetData() {
@@ -119,25 +149,58 @@
     }
 
     function loadData() {
-      const saved = JSON.parse(localStorage.getItem('pokeravond_data')) || [];
+      const savedSession = JSON.parse(localStorage.getItem('pokeravond_current')) || {};
+      const savedPlayers = savedSession.players || [];
+
+      // Set host name and session date
+      document.getElementById('host-name').value = savedSession.hostName || '';
+      document.getElementById('session-date').value = savedSession.sessionDate || new Date().toLocaleDateString();
+
+      // Populate the table with player data
       document.getElementById('table-body').innerHTML = '';
       spelersAantal = 0;
-      saved.forEach(speler => createSpelerRow(speler));
-      if (saved.length === 0) {
+      savedPlayers.forEach(speler => createSpelerRow(speler));
+
+      // If no players are saved, add 4 new rows by default
+      if (savedPlayers.length === 0) {
         for (let i = 0; i < 4; i++) voegSpelerToe();
       }
+
       bereken();
     }
 
-    function voegSpelerToe() {
-      createSpelerRow();
-      bereken();
+    function updateSessionInfo() {
+      const hostName = document.getElementById('host-name').value;
+      const sessionDate = document.getElementById('session-date').value;
+
+      const currentSession = JSON.parse(localStorage.getItem('pokeravond_current')) || {};
+
+      currentSession.hostName = hostName;
+      currentSession.sessionDate = sessionDate;
+
+      localStorage.setItem('pokeravond_current', JSON.stringify(currentSession));
     }
 
-    function saveData() {
-      bereken(); // automatisch opslaan
+    function endSession() {
+      const session = JSON.parse(localStorage.getItem('pokeravond_current'));
+      if (!session) return;
+
+      // Get history array or create new
+      const history = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+
+      // Add current session to history
+      history.push(session);
+      localStorage.setItem('pokeravond_history', JSON.stringify(history));
+
+      // Clear current session
+      localStorage.removeItem('pokeravond_current');
+
+      // Reload page to fresh state
+      alert("Sessie opgeslagen. Nieuwe sessie gestart.");
+      location.reload();
     }
 
+    // Initial load
     loadData();
   </script>
 
