@@ -52,8 +52,10 @@
   <div class="container">
     <!-- Left part: Sessions list with a table -->
     <div class="sessions-list">
+        
       <h3>Sessions History</h3>
-      <table>
+      <button onclick="downloadHistory()" class="download-btn">📁 Download geschiedenis (JSON)</button>
+    <table>
         <thead>
           <tr>
             <th>Host</th>
@@ -61,6 +63,7 @@
             <th>Aantal Spelers</th>
             <th>Totaal ingelegd</th>
             <th>Details</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="sessionsList">
@@ -76,76 +79,124 @@
   </div>
 
   <script>
-    // Load the session history from localStorage
-    const sessionHistory = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
-  
-    // Initialize data for the chart
-    const playerData = {};
-  
-    // Iterate over each session and aggregate the results by player name
-    sessionHistory.forEach(session => {
-      session.players.forEach(player => {
-        if (!playerData[player.naam]) {
-          playerData[player.naam] = 0;  // Initialize with 0 if player name not present
-        }
-        playerData[player.naam] += player.resultaat; // Sum up results for same player name
-      });
+let chartInstance = null;
+
+function renderChart() {
+  const ctx = document.getElementById('profitChart').getContext('2d');
+
+  // Clear previous chart if it exists
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  const history = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+  const aggregated = {};
+
+  history.forEach(session => {
+    session.players.forEach(player => {
+      const naam = player.naam.trim();
+      const resultaat = player.resultaat || 0;
+      if (!aggregated[naam]) {
+        aggregated[naam] = 0;
+      }
+      aggregated[naam] += resultaat;
     });
-  
-    // Extract player names and aggregated profits
-    const playerNames = Object.keys(playerData);
-    const aggregatedProfits = playerNames.map(name => playerData[name]);
-  
-    // Create the chart
-    const ctx = document.getElementById('profitChart').getContext('2d');
-    const profitChart = new Chart(ctx, {
-      type: 'bar', // Bar chart
-      data: {
-        labels: playerNames, // Player names as the labels
-        datasets: [{
-          label: 'Winst/Verlies per Speler',
-          data: aggregatedProfits, // Aggregated profits from each player
-          backgroundColor: aggregatedProfits.map(profit => profit >= 0 ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)'), // Green for win, red for loss
-          borderColor: aggregatedProfits.map(profit => profit >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
-          borderWidth: 1
-        }]
+  });
+
+  const labels = Object.keys(aggregated);
+  const data = Object.values(aggregated);
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Winst/Verlies (€)',
+        data,
+        backgroundColor: data.map(val => val >= 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)'),
+        borderColor: data.map(val => val >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
       },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Winst/Verlies (€)'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Spelers'
-            }
-          }
+      plugins: {
+        legend: {
+          display: false
         }
       }
-    });
-    // Display sessions in the list as a table
-    const sessionsList = document.getElementById('sessionsList');
-    sessionHistory.forEach((session, index) => {
-      const listItem = document.createElement('tr');
-      const totalProfit = session.players.reduce((acc, player) => acc + player.ingelegd, 0); // Calculate the total profit/loss for the session
-      const totalPlayers = session.players.length;
-      const sessionLink = `session-details.html?id=${index}`; // Link to the details page with session index
+    }
+  });
+}
 
-      listItem.innerHTML = `
-        <td>${session.hostName}</td>
-        <td>${session.sessionDate}</td>
-        <td>${totalPlayers}</td>
-        <td>€${totalProfit.toFixed(2)}</td>
-        <td><a href="${sessionLink}">Bekijk details</a></td>
-      `;
-      sessionsList.appendChild(listItem);
-    });
+      function loadData(){
+  // Load the session history from localStorage
+    const sessionHistory = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+
+
+        // Display sessions in the list as a table
+        const sessionsList = document.getElementById('sessionsList');
+        sessionsList.innerHTML = '';
+            sessionHistory.forEach((session, index) => {
+            const listItem = document.createElement('tr');
+            const totalProfit = session.players.reduce((acc, player) => acc + player.ingelegd, 0); // Calculate the total profit/loss for the session
+            const totalPlayers = session.players.length;
+            const sessionLink = `session-details.html?id=${index}`; // Link to the details page with session index
+                
+            listItem.innerHTML = `
+                <td>${session.hostName}</td>
+                <td>${session.sessionDate}</td>
+                <td>${totalPlayers}</td>
+                <td>€${totalProfit.toFixed(2)}</td>
+                <td><a href="${sessionLink}">Bekijk details</a></td>
+                <td><button class="removebtn" onclick="deleteSession(${index})">Verwijder</button></td>
+            `;
+            sessionsList.appendChild(listItem);
+            });
+
+            renderChart();
+    }
+   
+
+    function deleteSession(index) {
+    const sessionHistory = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+    
+    // Confirm the deletion
+    if (confirm('Weet je zeker dat je deze sessie wilt verwijderen?')) {
+      // Remove the session at the specified index
+      sessionHistory.splice(index, 1);
+      
+      // Save the updated session history back to localStorage
+      localStorage.setItem('pokeravond_history', JSON.stringify(sessionHistory));
+      
+      // Reload the session history to reflect the changes
+      loadData();
+    }
+  }
+  
+  function downloadHistory() {
+  const history = JSON.parse(localStorage.getItem('pokeravond_history')) || [];
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, '-');
+  const filename = `pokeravond_geschiedenis_${timestamp}.json`;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+  loadData();
   </script>
 </body>
 </html>
