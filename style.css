@@ -150,6 +150,9 @@ body {
     th:nth-child(6), td:nth-child(6) {
       display: none;
     }
+    .default-players {
+      display: none;
+    }
   }
 
   /* Mobielvriendelijk */
