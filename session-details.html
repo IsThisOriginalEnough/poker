@@ -4,8 +4,209 @@
   <meta charset="UTF-8">
   <title>Session Details</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css" />
   <style>
+    body {
+    font-family: sans-serif;
+    background: #f8f8f8;
+    padding: 20px;
+    max-width: 1000px;
+    margin: auto;
+  }
+  .container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 20px;
+  }
+  .default-players{
+    width: 150px; /* Reduced width to make it even further left */
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 1px; /* Move it slightly further left beyond the viewport */
+    padding-right: 20px;
+    background-color: #f8f8f8; /* Optional, for styling the left side */
+    box-shadow: 2px 0px 5px rgba(0,0,0,0.1); /* Optional, adds a small shadow to the left side */
+  }
+  .site {
+    margin-left: 150px; /* Adjust to match the new left side width */
+    width: calc(100% - 150px); /* Make sure right side takes the remaining space */
+    padding-left: 20px;
+  }
+
+  h2 {
+    text-align: center;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    background: #333;
+    color: white;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  button {
+    padding: 8px 16px;
+    font-size: 16px;
+    margin: 5px 3px;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .controls button {
+    padding: 4px 10px;
+    font-size: 18px;
+  }
+
+  .removebtn {
+    background-color:red;
+  }
+
+  .winst { color: green; }
+  .verlies { color: red; }
+
+  .host-container {
+    margin: 20px auto;
+    max-width: 600px;
+    text-align: center;
+  }
+  
+  .host-fields {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .host-input, .date-input {
+    flex: 1 1 200px;
+    text-align: left;
+  }
+  
+  .host-input label,
+  .date-input label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1rem;
+  }
+  
+  .host-input input,
+  .date-input input {
+    padding: 8px 10px;
+    font-size: 16px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: #fff;
+  }
+  
+
+  .summary {
+    font-weight: bold;
+    margin-top: 10px;
+    background: #eee;
+    padding: 10px;
+  }
+
+  /* Printstijl */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+    }
+
+    .no-print, .controls {
+      display: none !important;
+    }
+
+    .summary, h2 {
+      margin-top: 20px;
+    }
+
+    input {
+      border: none;
+      font-weight: bold;
+    }
+
+    .resultaat {
+      font-weight: bold;
+    }
+    th:nth-child(6), td:nth-child(6) {
+      display: none;
+    }
+    .default-players {
+      display: none;
+    }
+  }
+
+  /* Mobielvriendelijk */
+  @media (max-width: 600px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+
+    tr {
+      margin-bottom: 15px;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    td {
+      text-align: right;
+      padding-left: 50%;
+      position: relative;
+    }
+
+    td::before {
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+
+    .default-players {
+      display: none; /* Hide it */
+    }
+  
+    /* Make the right side take full width and stack */
+    .site {
+      margin-left: 0; /* Remove left margin */
+      width: 100%; /* Take full width */
+      padding-left: 10px; /* Adjust padding */
+    }
+  
+
+    td:nth-child(1)::before { content: "Speler"; }
+    td:nth-child(2)::before { content: "Inkopen (€10)"; }
+    td:nth-child(3)::before { content: "Ingelegd"; }
+    td:nth-child(4)::before { content: "Eindwaarde"; }
+    td:nth-child(5)::before { content: "Winst/Verlies"; }
+  }
     .winst {
   color: green;
   font-weight: bold;
