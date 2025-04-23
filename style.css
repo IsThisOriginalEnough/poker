@@ -5,6 +5,27 @@ body {
     max-width: 1000px;
     margin: auto;
   }
+  .container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 20px;
+  }
+  .default-players{
+    width: 150px; /* Reduced width to make it even further left */
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 1px; /* Move it slightly further left beyond the viewport */
+    padding-right: 20px;
+    background-color: #f8f8f8; /* Optional, for styling the left side */
+    box-shadow: 2px 0px 5px rgba(0,0,0,0.1); /* Optional, adds a small shadow to the left side */
+  }
+  .site {
+    margin-left: 150px; /* Adjust to match the new left side width */
+    width: calc(100% - 150px); /* Make sure right side takes the remaining space */
+    padding-left: 20px;
+  }
 
   h2 {
     text-align: center;
@@ -157,6 +178,18 @@ body {
       white-space: nowrap;
       font-weight: bold;
     }
+
+    .default-players {
+      display: none; /* Hide it */
+    }
+  
+    /* Make the right side take full width and stack */
+    .site {
+      margin-left: 0; /* Remove left margin */
+      width: 100%; /* Take full width */
+      padding-left: 10px; /* Adjust padding */
+    }
+  
 
     td:nth-child(1)::before { content: "Speler"; }
     td:nth-child(2)::before { content: "Inkopen (€10)"; }

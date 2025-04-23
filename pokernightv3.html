@@ -9,52 +9,86 @@
 <body>
 
   <h2>Pokeravond Rekentool</h2>
-
-  <div class="no-print">
-    <div class="host-container no-print">
-      <div class="host-fields">
-        <div class="host-input">
-          <label for="host-name">Naam van de host:</label>
-          <input type="text" id="host-name" placeholder="Bijv. Jan Jansen" oninput="updateSessionInfo()"/>
-        </div>
-        <div class="date-input">
-          <label for="session-date">Datum van sessie:</label>
-          <input type="date" id="session-date" oninput="updateSessionInfo()"/>
+<div class="container">
+  <div class="default-players">
+    <h3>Standaard Spelers</h3>
+    <ul id="default-players-list">
+      <!-- Default players will be populated here -->
+    </ul>
+  </div>
+  <div class="site">
+    <div class="no-print">
+      <div class="host-container no-print">
+        <div class="host-fields">
+          <div class="host-input">
+            <label for="host-name">Naam van de host:</label>
+            <input type="text" id="host-name" placeholder="Bijv. Jan Jansen" oninput="updateSessionInfo()"/>
+          </div>
+          <div class="date-input">
+            <label for="session-date">Datum van sessie:</label>
+            <input type="date" id="session-date" oninput="updateSessionInfo()"/>
+          </div>
         </div>
       </div>
+      <br />
+      <button onclick="voegSpelerToe()">+ Speler toevoegen (max 9)</button>
+      <button onclick="resetData()">Reset gegevens</button>
+      <button onclick="window.print()">Print overzicht</button>
+      <button onclick="endSession()">Einde sessie (lokaal opslaan)</button>
+      <button onclick="window.location.href='history.html'">Bekijk Geschiedenis</button>
+  
     </div>
-    <br />
-    <button onclick="voegSpelerToe()">+ Speler toevoegen (max 9)</button>
-    <button onclick="resetData()">Reset gegevens</button>
-    <button onclick="window.print()">Print overzicht</button>
-    <button onclick="endSession()">Einde sessie (lokaal opslaan)</button>
-    <button onclick="window.location.href='history.html'">Bekijk Geschiedenis</button>
-
+  
+    <table id="pokertable">
+      <thead>
+        <tr>
+          <th>Speler</th>
+          <th>Inkopen (€10)</th>
+          <th>Ingelegd</th>
+          <th>Eindwaarde</th>
+          <th>Winst/Verlies</th>
+          <th>Verwijder</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  
+    <div class="summary">
+      <p id="totaal-ingelegd">Totaal ingelegd: €0</p>
+      <p id="totaal-eindwaarde">Totaal eindwaarde: €0</p>
+      <p id="verschil">Verschil (moet €0 zijn): €0</p>
+    </div>
   </div>
+</div>
+ 
 
-  <table id="pokertable">
-    <thead>
-      <tr>
-        <th>Speler</th>
-        <th>Inkopen (€10)</th>
-        <th>Ingelegd</th>
-        <th>Eindwaarde</th>
-        <th>Winst/Verlies</th>
-        <th>Verwijder</th>
-      </tr>
-    </thead>
-    <tbody id="table-body"></tbody>
-  </table>
-
-  <div class="summary">
-    <p id="totaal-ingelegd">Totaal ingelegd: €0</p>
-    <p id="totaal-eindwaarde">Totaal eindwaarde: €0</p>
-    <p id="verschil">Verschil (moet €0 zijn): €0</p>
-  </div>
 
   <script>
     let spelersAantal = 0;
     const MAX_SPELERS = 9;
+
+    const defaultPlayers = [
+      'Jan Jansen',
+      'Piet Pietersen',
+      'Klaas Klaassen',
+      'Anna Anna',
+      'Sophie Smit',
+      'Lars Larsen'
+    ];
+
+    function addDefaultPlayer(playerName) {
+      createSpelerRow({ naam: playerName });
+      bereken();
+    }
+
+    function loadDefaultPlayers() {
+      const playersList = document.getElementById('default-players-list');
+      defaultPlayers.forEach(player => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `${player} <button onclick="addDefaultPlayer('${player}')">+</button>`;
+        playersList.appendChild(listItem);
+      });
+    }
 
     function createSpelerRow(data = {}) {
       if (spelersAantal >= MAX_SPELERS) return;
@@ -145,7 +179,7 @@
         localStorage.removeItem('pokeravond_data');
         document.getElementById('table-body').innerHTML = '';
         spelersAantal = 0;
-        for (let i = 0; i < 4; i++) voegSpelerToe();
+
         bereken();
       }
     }
@@ -162,12 +196,7 @@
       document.getElementById('table-body').innerHTML = '';
       spelersAantal = 0;
       savedPlayers.forEach(speler => createSpelerRow(speler));
-
-      // If no players are saved, add 4 new rows by default
-      if (savedPlayers.length === 0) {
-        for (let i = 0; i < 4; i++) voegSpelerToe();
-      }
-
+      loadDefaultPlayers()
       bereken();
     }
 
